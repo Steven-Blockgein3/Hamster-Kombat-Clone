@@ -6,7 +6,6 @@ import { motion } from 'framer-motion';
 import { FaCoins } from 'react-icons/fa';
 import { logEvent } from 'firebase/analytics';
 import { ref, onValue } from 'firebase/database';
-import { toast } from 'react-toastify';
 
 function Home() {
   const { user, setUser } = useOutletContext();
@@ -23,7 +22,7 @@ function Home() {
       setUser(prevUser => ({ ...prevUser, ...newData }));
     } catch (error) {
       console.error("Error updating user data:", error);
-      toast.error("Failed to update user data. Please try again.");
+      console.error("Failed to update user data. Please try again.");
     }
   }, [user.id, setUser]);
 
@@ -101,7 +100,7 @@ function Home() {
       }
     } else {
       setMessage("Not enough energy to mine!");
-      toast.warning("Not enough energy to mine!");
+      console.warn("Not enough energy to mine!");
     }
   };
 

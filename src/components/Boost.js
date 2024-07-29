@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
-import { toast } from 'react-toastify';
 
 function Boost() {
   const { user, setUser } = useOutletContext();
@@ -29,10 +28,10 @@ function Boost() {
       const userRef = doc(db, 'users', user.id);
       await updateDoc(userRef, updatedUser);
       setUser(updatedUser);
-      toast.success(`Successfully boosted ${type}!`);
+      console.log(`Successfully boosted ${type}!`);
     } catch (error) {
       console.error(`Error boosting ${type}:`, error);
-      toast.error(`Failed to boost ${type}. Please try again.`);
+      console.error(`Failed to boost ${type}. Please try again.`);
     }
     setConfirmBoost(null);
   };

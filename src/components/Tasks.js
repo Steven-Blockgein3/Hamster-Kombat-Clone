@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { collection, query, where, getDocs, updateDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase';
-import { toast } from 'react-toastify';
 
 function Tasks() {
   const { user, setUser } = useOutletContext();
@@ -16,7 +15,7 @@ function Tasks() {
         setTasks(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
       } catch (error) {
         console.error("Error fetching tasks:", error);
-        toast.error("Failed to fetch tasks. Please try again later.");
+        console.error("Failed to fetch tasks. Please try again later.");
       }
     };
 
@@ -37,10 +36,10 @@ function Tasks() {
         task.id === taskId ? { ...task, completed: true } : task
       ));
 
-      toast.success("Task completed successfully!");
+      console.log("Task completed successfully!");
     } catch (error) {
       console.error("Error completing task:", error);
-      toast.error("Failed to complete task. Please try again.");
+      console.error("Failed to complete task. Please try again.");
     }
   };
 
