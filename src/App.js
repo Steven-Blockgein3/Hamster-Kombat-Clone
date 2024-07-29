@@ -1,81 +1,44 @@
 import React, { useEffect, useState } from 'react';
 import { Outlet, useNavigate, Link } from 'react-router-dom';
-import { onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
-import { auth, db, analytics, messaging } from './firebase';
-import { logEvent } from 'firebase/analytics';
-import { onMessage } from 'firebase/messaging';
 import ErrorBoundary from './components/ErrorBoundary';
+import { getUser, setUser, updateUser } from './utils/localStorage';
 
 function App() {
-  const [user, setUser] = useState(null);
+  const [user, setUserState] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
-      setLoading(true);
-      if (authUser) {
-        try {
-          const userRef = doc(db, 'users', authUser.uid);
-          const userSnap = await getDoc(userRef);
-          
-          if (userSnap.exists()) {
-            setUser({ id: authUser.uid, ...userSnap.data() });
-          } else {
-            const newUser = {
-              id: authUser.uid,
-              coins: 0,
-              energy: 100,
-              level: 1,
-              achievements: [],
-              lastDailyReward: null,
-            };
-            await setDoc(userRef, newUser);
-            setUser(newUser);
-          }
-
-          // Set up real-time listener for user data
-          const unsubscribeUser = onSnapshot(userRef, (doc) => {
-            setUser({ id: doc.id, ...doc.data() });
-          });
-
-          // Log user login event
-          logEvent(analytics, 'login');
-
-          // Set up push notifications
-          onMessage(messaging, (payload) => {
-            console.log('Message received. ', payload);
-            // Handle the received message
-          });
-
-          return () => unsubscribeUser();
-        } catch (error) {
-          console.error("Error fetching user data:", error);
-          setUser(null);
-        }
-      } else {
-        setUser(null);
-        navigate('/');
-      }
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, [navigate]);
+    const storedUser = getUser();
+    if (storedUser) {
+      setUserState(storedUser);
+    } else {
+      const newUser = {
+        id: 'user-' + Date.now(),
+        coins: 0,
+        energy: 100,
+        level: 1,
+        achievements: [],
+        lastDailyReward: null,
+      };
+      setUser(newUser);
+      setUserState(newUser);
+    }
+    setLoading(false);
+  }, []);
 
   useEffect(() => {
     // Check for daily reward
-    if (user && user.id) {
+    if (user) {
       const now = new Date();
       const lastReward = user.lastDailyReward ? new Date(user.lastDailyReward) : null;
       if (!lastReward || now.getDate() !== lastReward.getDate()) {
         // Give daily reward
-        const userRef = doc(db, 'users', user.id);
-        setDoc(userRef, { 
+        const updatedUser = updateUser({ 
           coins: (user.coins || 0) + 50, 
           lastDailyReward: now.toISOString() 
-        }, { merge: true });
+        });
+        setUserState(updatedUser);
       }
     }
   }, [user]);
@@ -99,7 +62,7 @@ function App() {
         </div>
       </header>
       <main className="p-4">
-        <Outlet context={{ user, setUser }} />
+        <Outlet context={{ user, setUser: setUserState }} />
       </main>
       <nav className="fixed bottom-0 w-full bg-gray-200 p-4">
         <Link to="/" className="mx-2">Home</Link>

@@ -1,52 +1,44 @@
 import React, { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { collection, query, where, getDocs, updateDoc, doc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { getTasks, setTasks, updateUser } from '../utils/localStorage';
 
 function Tasks() {
   const { user, setUser } = useOutletContext();
-  const [tasks, setTasks] = useState([]);
+  const [tasks, setTasksState] = useState([]);
 
   useEffect(() => {
-    const fetchTasks = async () => {
-      try {
-        const q = query(collection(db, 'tasks'), where('level', '<=', user.level));
-        const querySnapshot = await getDocs(q);
-        setTasks(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-      } catch (error) {
-        console.error("Error fetching tasks:", error);
-        console.error("Failed to fetch tasks. Please try again later.");
-      }
-    };
-
-    fetchTasks();
-  }, [user.level]);
-
-  const completeTask = async (taskId) => {
-    try {
-      const taskRef = doc(db, 'tasks', taskId);
-      await updateDoc(taskRef, { completed: true });
-
-      const userRef = doc(db, 'users', user.id || 'defaultId');
-      const updatedUser = { ...user, coins: user.coins + 10 };
-      await updateDoc(userRef, updatedUser);
-      setUser(updatedUser);
-
-      setTasks(tasks.map(task => 
-        task.id === taskId ? { ...task, completed: true } : task
-      ));
-
-      console.log("Task completed successfully!");
-    } catch (error) {
-      console.error("Error completing task:", error);
-      console.error("Failed to complete task. Please try again.");
+    const storedTasks = getTasks();
+    if (storedTasks.length === 0) {
+      // Initialize some default tasks if none exist
+      const defaultTasks = [
+        { id: 1, title: 'Complete 10 mining sessions', description: 'Mine coins 10 times', level: 1, completed: false },
+        { id: 2, title: 'Reach level 5', description: 'Level up to level 5', level: 3, completed: false },
+        { id: 3, title: 'Accumulate 1000 coins', description: 'Earn a total of 1000 coins', level: 5, completed: false },
+      ];
+      setTasks(defaultTasks);
+      setTasksState(defaultTasks);
+    } else {
+      setTasksState(storedTasks);
     }
+  }, []);
+
+  const completeTask = (taskId) => {
+    const updatedTasks = tasks.map(task => 
+      task.id === taskId ? { ...task, completed: true } : task
+    );
+    setTasks(updatedTasks);
+    setTasksState(updatedTasks);
+
+    const updatedUser = updateUser({ coins: user.coins + 10 });
+    setUser(updatedUser);
+
+    console.log("Task completed successfully!");
   };
 
   return (
     <div className="tasks">
       <h2 className="text-xl font-bold mb-4">Tasks</h2>
-      {tasks.map(task => (
+      {tasks.filter(task => task.level <= user.level).map(task => (
         <div key={task.id} className="mb-4 p-4 border rounded">
           <h3 className="font-semibold">{task.title}</h3>
           <p>{task.description}</p>

@@ -1,25 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
-import { db } from '../firebase';
+import { getLeaderboard, setLeaderboard } from '../utils/localStorage';
 
 function Leaderboard() {
-  const [leaderboard, setLeaderboard] = useState([]);
+  const [leaderboard, setLeaderboardState] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchLeaderboard = async () => {
-      try {
-        const q = query(collection(db, 'users'), orderBy('coins', 'desc'), limit(10));
-        const querySnapshot = await getDocs(q);
-        setLeaderboard(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-      } catch (error) {
-        console.error("Error fetching leaderboard:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchLeaderboard();
+    const storedLeaderboard = getLeaderboard();
+    if (storedLeaderboard.length === 0) {
+      // Initialize some default leaderboard data if none exists
+      const defaultLeaderboard = [
+        { id: 'user1', coins: 1000, level: 10 },
+        { id: 'user2', coins: 800, level: 8 },
+        { id: 'user3', coins: 600, level: 6 },
+        { id: 'user4', coins: 400, level: 4 },
+        { id: 'user5', coins: 200, level: 2 },
+      ];
+      setLeaderboard(defaultLeaderboard);
+      setLeaderboardState(defaultLeaderboard);
+    } else {
+      setLeaderboardState(storedLeaderboard);
+    }
+    setLoading(false);
   }, []);
 
   if (loading) {
