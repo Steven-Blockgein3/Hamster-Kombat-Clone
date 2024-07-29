@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { collection, query, where, getDocs, updateDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase';
+import { toast } from 'react-toastify';
 
 function Tasks() {
   const { user, setUser } = useOutletContext();
@@ -9,26 +10,38 @@ function Tasks() {
 
   useEffect(() => {
     const fetchTasks = async () => {
-      const q = query(collection(db, 'tasks'), where('level', '<=', user.level));
-      const querySnapshot = await getDocs(q);
-      setTasks(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      try {
+        const q = query(collection(db, 'tasks'), where('level', '<=', user.level));
+        const querySnapshot = await getDocs(q);
+        setTasks(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      } catch (error) {
+        console.error("Error fetching tasks:", error);
+        toast.error("Failed to fetch tasks. Please try again later.");
+      }
     };
 
     fetchTasks();
   }, [user.level]);
 
   const completeTask = async (taskId) => {
-    const taskRef = doc(db, 'tasks', taskId);
-    await updateDoc(taskRef, { completed: true });
+    try {
+      const taskRef = doc(db, 'tasks', taskId);
+      await updateDoc(taskRef, { completed: true });
 
-    const userRef = doc(db, 'users', user.id);
-    const updatedUser = { ...user, coins: user.coins + 10 };
-    await updateDoc(userRef, updatedUser);
-    setUser(updatedUser);
+      const userRef = doc(db, 'users', user.id);
+      const updatedUser = { ...user, coins: user.coins + 10 };
+      await updateDoc(userRef, updatedUser);
+      setUser(updatedUser);
 
-    setTasks(tasks.map(task => 
-      task.id === taskId ? { ...task, completed: true } : task
-    ));
+      setTasks(tasks.map(task => 
+        task.id === taskId ? { ...task, completed: true } : task
+      ));
+
+      toast.success("Task completed successfully!");
+    } catch (error) {
+      console.error("Error completing task:", error);
+      toast.error("Failed to complete task. Please try again.");
+    }
   };
 
   return (

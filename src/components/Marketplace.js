@@ -2,6 +2,7 @@ import React from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
+import { toast } from 'react-toastify';
 
 function Marketplace() {
   const { user, setUser } = useOutletContext();
@@ -14,26 +15,34 @@ function Marketplace() {
 
   const buyUpgrade = async (upgrade) => {
     if (user.coins >= upgrade.cost) {
-      const updatedUser = { ...user, coins: user.coins - upgrade.cost };
-      
-      // Apply upgrade effect (this is a simplified example)
-      switch(upgrade.name) {
-        case 'Mining Speed Boost':
-          updatedUser.miningSpeed = (updatedUser.miningSpeed || 1) * 1.1;
-          break;
-        case 'Energy Capacity Upgrade':
-          updatedUser.maxEnergy = (updatedUser.maxEnergy || 100) + 20;
-          break;
-        case 'Coin Multiplier':
-          updatedUser.coinMultiplier = (updatedUser.coinMultiplier || 1) * 1.05;
-          break;
-        default:
-          break;
-      }
+      try {
+        const updatedUser = { ...user, coins: user.coins - upgrade.cost };
+        
+        // Apply upgrade effect (this is a simplified example)
+        switch(upgrade.name) {
+          case 'Mining Speed Boost':
+            updatedUser.miningSpeed = (updatedUser.miningSpeed || 1) * 1.1;
+            break;
+          case 'Energy Capacity Upgrade':
+            updatedUser.maxEnergy = (updatedUser.maxEnergy || 100) + 20;
+            break;
+          case 'Coin Multiplier':
+            updatedUser.coinMultiplier = (updatedUser.coinMultiplier || 1) * 1.05;
+            break;
+          default:
+            break;
+        }
 
-      const userRef = doc(db, 'users', user.id);
-      await updateDoc(userRef, updatedUser);
-      setUser(updatedUser);
+        const userRef = doc(db, 'users', user.id);
+        await updateDoc(userRef, updatedUser);
+        setUser(updatedUser);
+        toast.success(`Successfully purchased ${upgrade.name}!`);
+      } catch (error) {
+        console.error("Error buying upgrade:", error);
+        toast.error("Failed to purchase upgrade. Please try again.");
+      }
+    } else {
+      toast.warning("Not enough coins to purchase this upgrade.");
     }
   };
 

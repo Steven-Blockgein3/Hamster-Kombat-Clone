@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { FaCoins } from 'react-icons/fa';
 import { logEvent } from 'firebase/analytics';
 import { ref, onValue } from 'firebase/database';
+import { toast } from 'react-toastify';
 
 function Home() {
   const { user, setUser } = useOutletContext();
@@ -16,9 +17,14 @@ function Home() {
   const [globalEvent, setGlobalEvent] = useState(null);
 
   const updateUserData = useCallback(async (newData) => {
-    const userRef = doc(db, 'users', user.id);
-    await updateDoc(userRef, newData);
-    setUser(prevUser => ({ ...prevUser, ...newData }));
+    try {
+      const userRef = doc(db, 'users', user.id);
+      await updateDoc(userRef, newData);
+      setUser(prevUser => ({ ...prevUser, ...newData }));
+    } catch (error) {
+      console.error("Error updating user data:", error);
+      toast.error("Failed to update user data. Please try again.");
+    }
   }, [user.id, setUser]);
 
   useEffect(() => {
@@ -88,9 +94,14 @@ function Home() {
   const handleMining = () => {
     if (user.energy > 0) {
       setIsMining(!isMining);
-      logEvent(analytics, isMining ? 'stop_mining' : 'start_mining');
+      try {
+        logEvent(analytics, isMining ? 'stop_mining' : 'start_mining');
+      } catch (error) {
+        console.error("Error logging mining event:", error);
+      }
     } else {
       setMessage("Not enough energy to mine!");
+      toast.warning("Not enough energy to mine!");
     }
   };
 
