@@ -12,13 +12,13 @@ function Boost() {
 
     switch (type) {
       case 'energy':
-        updatedUser.energy = Math.min(user.energy + 50, 100);
+        updatedUser.energy = Math.min((user.energy || 0) + 50, user.maxEnergy || 100);
         break;
       case 'coins':
-        updatedUser.coins += 100;
+        updatedUser.coins = (user.coins || 0) + 100;
         break;
       case 'level':
-        updatedUser.level += 1;
+        updatedUser.level = (user.level || 1) + 1;
         break;
       default:
         return;

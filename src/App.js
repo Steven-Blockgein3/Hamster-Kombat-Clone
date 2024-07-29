@@ -66,14 +66,14 @@ function App() {
 
   useEffect(() => {
     // Check for daily reward
-    if (user) {
+    if (user && user.id) {
       const now = new Date();
       const lastReward = user.lastDailyReward ? new Date(user.lastDailyReward) : null;
       if (!lastReward || now.getDate() !== lastReward.getDate()) {
         // Give daily reward
         const userRef = doc(db, 'users', user.id);
         setDoc(userRef, { 
-          coins: user.coins + 50, 
+          coins: (user.coins || 0) + 50, 
           lastDailyReward: now.toISOString() 
         }, { merge: true });
       }

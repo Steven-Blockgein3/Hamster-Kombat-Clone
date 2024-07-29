@@ -108,9 +108,9 @@ function Home() {
     <div className="home">
       <h2 className="text-2xl font-bold mb-4">Mining Dashboard</h2>
       <div className="mb-4">
-        <p>Coins: {user.coins}</p>
-        <p>Energy: {user.energy}/100</p>
-        <p>Level: {user.level}</p>
+        <p>Coins: {user.coins || 0}</p>
+        <p>Energy: {user.energy || 0}/{user.maxEnergy || 100}</p>
+        <p>Level: {user.level || 1}</p>
         <p>Mining Power: {miningPower}</p>
       </div>
       <motion.button

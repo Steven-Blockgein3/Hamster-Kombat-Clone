@@ -35,7 +35,13 @@ function Marketplace() {
           throw "Not enough coins!";
         }
 
-        const updatedUser = { ...userData, coins: userData.coins - upgrade.cost };
+        const updatedUser = { 
+          ...userData, 
+          coins: (userData.coins || 0) - upgrade.cost,
+          miningSpeed: userData.miningSpeed || 1,
+          maxEnergy: userData.maxEnergy || 100,
+          coinMultiplier: userData.coinMultiplier || 1
+        };
         
         // Apply upgrade effect
         switch(upgrade.name) {

@@ -27,7 +27,7 @@ function Tasks() {
       const taskRef = doc(db, 'tasks', taskId);
       await updateDoc(taskRef, { completed: true });
 
-      const userRef = doc(db, 'users', user.id);
+      const userRef = doc(db, 'users', user.id || 'defaultId');
       const updatedUser = { ...user, coins: user.coins + 10 };
       await updateDoc(userRef, updatedUser);
       setUser(updatedUser);
