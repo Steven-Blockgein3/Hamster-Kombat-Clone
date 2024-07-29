@@ -11,6 +11,7 @@ function Home() {
   const { user, setUser } = useOutletContext();
   const [isMining, setIsMining] = useState(false);
   const [miningPower, setMiningPower] = useState(1);
+  const [miningSpeed, setMiningSpeed] = useState(1);
   const [message, setMessage] = useState('');
   const [globalEvent, setGlobalEvent] = useState(null);
 
@@ -26,7 +27,7 @@ function Home() {
 
     if (isMining && user.energy > 0) {
       miningInterval = setInterval(() => {
-        const miningReward = miningPower * (globalEvent?.coinMultiplier || 1);
+        const miningReward = miningPower * miningSpeed * (globalEvent?.coinMultiplier || 1) * (user.coinMultiplier || 1);
         updateUserData({
           coins: user.coins + miningReward,
           energy: Math.max(user.energy - 1, 0)
@@ -38,10 +39,14 @@ function Home() {
 
     // Energy regeneration
     energyInterval = setInterval(() => {
-      if (user.energy < 100) {
-        updateUserData({ energy: Math.min(user.energy + 1, 100) });
+      if (user.energy < (user.maxEnergy || 100)) {
+        updateUserData({ energy: Math.min(user.energy + 1, user.maxEnergy || 100) });
       }
     }, 10000);  // Regenerate 1 energy every 10 seconds
+
+    // Update mining speed and power based on user upgrades
+    setMiningSpeed(user.miningSpeed || 1);
+    setMiningPower(user.level);
 
     return () => {
       clearInterval(miningInterval);

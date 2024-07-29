@@ -5,6 +5,7 @@ import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import { auth, db, analytics, messaging } from './firebase';
 import { logEvent } from 'firebase/analytics';
 import { onMessage } from 'firebase/messaging';
+import ErrorBoundary from './components/ErrorBoundary';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -106,9 +107,17 @@ function App() {
         <Link to="/stats" className="mx-2">Stats</Link>
         <Link to="/boost" className="mx-2">Boost</Link>
         <Link to="/referral" className="mx-2">Referral</Link>
+        <Link to="/marketplace" className="mx-2">Marketplace</Link>
+        <Link to="/leaderboard" className="mx-2">Leaderboard</Link>
       </nav>
     </div>
   );
 }
 
-export default App;
+export default function AppWithErrorBoundary() {
+  return (
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
+  );
+}
