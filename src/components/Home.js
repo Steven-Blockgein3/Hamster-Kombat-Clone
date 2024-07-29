@@ -1,15 +1,18 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { doc, updateDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { db, analytics, rtdb } from '../firebase';
 import { motion } from 'framer-motion';
 import { FaCoins } from 'react-icons/fa';
+import { logEvent } from 'firebase/analytics';
+import { ref, onValue } from 'firebase/database';
 
 function Home() {
   const { user, setUser } = useOutletContext();
   const [isMining, setIsMining] = useState(false);
   const [miningPower, setMiningPower] = useState(1);
   const [message, setMessage] = useState('');
+  const [globalEvent, setGlobalEvent] = useState(null);
 
   const updateUserData = useCallback(async (newData) => {
     const userRef = doc(db, 'users', user.id);
@@ -23,8 +26,9 @@ function Home() {
 
     if (isMining && user.energy > 0) {
       miningInterval = setInterval(() => {
+        const miningReward = miningPower * (globalEvent?.coinMultiplier || 1);
         updateUserData({
-          coins: user.coins + miningPower,
+          coins: user.coins + miningReward,
           energy: Math.max(user.energy - 1, 0)
         });
       }, 1000);
@@ -43,21 +47,43 @@ function Home() {
       clearInterval(miningInterval);
       clearInterval(energyInterval);
     };
-  }, [isMining, user.energy, user.coins, updateUserData, miningPower]);
+  }, [isMining, user.energy, user.coins, updateUserData, miningPower, globalEvent]);
 
   useEffect(() => {
     // Level up system
     const requiredCoins = user.level * 100;
     if (user.coins >= requiredCoins) {
-      updateUserData({ level: user.level + 1, coins: user.coins - requiredCoins });
+      updateUserData({ 
+        level: user.level + 1, 
+        coins: user.coins - requiredCoins,
+        achievements: arrayUnion(`Reached Level ${user.level + 1}`)
+      });
       setMessage(`Congratulations! You've reached level ${user.level + 1}!`);
       setMiningPower(prevPower => prevPower + 1);
+      logEvent(analytics, 'level_up', { level: user.level + 1 });
     }
   }, [user.coins, user.level, updateUserData]);
+
+  useEffect(() => {
+    // Listen for global events
+    const eventRef = ref(rtdb, 'globalEvents');
+    const unsubscribe = onValue(eventRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        setGlobalEvent(data);
+        setMessage(`Global Event: ${data.name}! ${data.description}`);
+      } else {
+        setGlobalEvent(null);
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const handleMining = () => {
     if (user.energy > 0) {
       setIsMining(!isMining);
+      logEvent(analytics, isMining ? 'stop_mining' : 'start_mining');
     } else {
       setMessage("Not enough energy to mine!");
     }
@@ -109,6 +135,14 @@ function Home() {
             style={{ width: `${(user.coins / (user.level * 100)) * 100}%` }}
           ></div>
         </div>
+      </div>
+      <div className="mt-4">
+        <h3 className="text-xl font-semibold">Achievements</h3>
+        <ul>
+          {user.achievements && user.achievements.map((achievement, index) => (
+            <li key={index}>{achievement}</li>
+          ))}
+        </ul>
       </div>
     </div>
   );
